@@ -1,0 +1,383 @@
+<div class="apidocDiv">
+<style>
+/*csslint
+*/
+.apidocDiv {
+    background: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.apidocDiv a[href] {
+    color: #33f;
+    font-weight: bold;
+    text-decoration: none;
+}
+.apidocDiv a[href]:hover {
+    text-decoration: underline;
+}
+.apidocCodeCommentSpan {
+    background: #bbf;
+    color: #000;
+    display: block;
+}
+.apidocCodeKeywordSpan {
+    color: #d00;
+    font-weight: bold;
+}
+.apidocCodePre {
+    background: #eef;
+    border: 1px solid;
+    color: #777;
+    padding: 5px;
+    white-space: pre-wrap;
+}
+.apidocFooterDiv {
+    margin-top: 20px;
+    text-align: center;
+}
+.apidocModuleLi {
+    margin-top: 10px;
+}
+.apidocSectionDiv {
+    border-top: 1px solid;
+    margin-top: 20px;
+}
+.apidocSignatureSpan {
+    color: #777;
+    font-weight: bold;
+}
+</style>
+<h1>api documentation for
+    <a
+
+        href="https://github.com/nathanoehlman/knox-mpu#readme"
+
+    >knox-mpu (v0.1.6)</a>
+</h1>
+<h4>Provide multi part upload functionality to Amazon S3 using the knox library</h4>
+<div class="apidocSectionDiv"><a
+    href="#apidoc.tableOfContents"
+    id="apidoc.tableOfContents"
+><h1>table of contents</h1></a><ol>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.knox-mpu">module knox-mpu</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.knox-mpu.knox-mpu">
+            function <span class="apidocSignatureSpan"></span>knox-mpu
+            <span class="apidocSignatureSpan">(opts, callback)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.knox-mpu.multipartupload">
+            function <span class="apidocSignatureSpan">knox-mpu.</span>multipartupload
+            <span class="apidocSignatureSpan">(opts, callback)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.knox-mpu.super_">
+            function <span class="apidocSignatureSpan">knox-mpu.</span>super_
+            <span class="apidocSignatureSpan">()</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.knox-mpu.toString">
+            function <span class="apidocSignatureSpan">knox-mpu.</span>toString
+            <span class="apidocSignatureSpan">()</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <span class="apidocSignatureSpan">object <span class="apidocSignatureSpan">knox-mpu.</span>parse</span>
+
+        </li>
+
+    </ol></li>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.knox-mpu.parse">module knox-mpu.parse</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.knox-mpu.parse.xmlResponse">
+            function <span class="apidocSignatureSpan">knox-mpu.parse.</span>xmlResponse
+            <span class="apidocSignatureSpan">(req, callback)</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.knox-mpu.toString">module knox-mpu.toString</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.knox-mpu.toString.toString">
+            function <span class="apidocSignatureSpan">knox-mpu.</span>toString
+            <span class="apidocSignatureSpan">()</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+</ol></div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.knox-mpu" id="apidoc.module.knox-mpu">module knox-mpu</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.knox-mpu.knox-mpu" id="apidoc.element.knox-mpu.knox-mpu">
+        function <span class="apidocSignatureSpan"></span>knox-mpu
+        <span class="apidocSignatureSpan">(opts, callback)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">function MultiPartUpload(opts, callback) {
+    if (!opts.client || !opts.objectName) {
+        throw new Error(&#x27;MultiPart upload must be created from a client and provide an object name&#x27;);
+    }
+
+    if (!opts.stream &#x26;&#x26; !opts.file) {
+        throw new Error(&#x27;MultiPart upload must be passed either a stream or file parameter&#x27;);
+    }
+
+    if (opts.stream &#x26;&#x26; opts.file) {
+        throw new Error(&#x27;You cannot provide both a stream and a file to upload&#x27;);
+    }
+
+    if (opts.noDisk &#x26;&#x26; opts.partSize &#x26;&#x26; opts.partSize &#x3e; 10485760) {
+        throw new Error(&#x27;Keep in-memory part sizes 10MB or less&#x27;);
+    }
+
+    callback = callback || function(err, results) {};
+
+    this.objectName = opts.objectName;
+    this.fileName = opts.file;
+    this.headers = opts.headers || {};
+    this.client = opts.client;
+    this.partSize = opts.partSize || 5242880; // 5MB default
+    this.maxRetries = opts.maxRetries || 0;   // default to no retry
+    this.uploadId = null;
+    this.uploads = new Batch();
+    this.noDisk = opts.noDisk;
+    this.maxUploadSize = opts.maxUploadSize || 1/0; // infinity default
+    this.currentUploadSize = 0;
+    this.aborted = false;
+    this.totalUploadSize = 0;
+
+    this.uploads.concurrency(opts.batchSize ||4); // 4 simultaneous uploads by default
+
+    // initialise the tmp directory based on opts (fallback to os.tmpDir())
+    this.tmpDir = !this.noDisk &#x26;&#x26; (opts.tmpDir || os.tmpDir());
+
+    var mpu = this,
+        written = 0;
+
+    mpu.on(&#x27;partProgress&#x27;, function(data) {
+        written += data.written;
+        mpu.emit(&#x27;progress&#x27;, {
+            written: written,
+            total: mpu.totalUploadSize,
+            percent: written / mpu.totalUploadSize * 100 | 0
+        });
+    });
+
+    // Recalculate progress as previously written data needs to be rewritten
+    mpu.on(&#x27;failed&#x27;, function(part, partWritten) {
+        written = written - partWritten;
+    });
+
+    if (opts.stream) {
+        this._putStream(opts.stream, callback);
+    } else {
+        this._putFile(opts.file, callback);
+    }
+
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.knox-mpu.multipartupload" id="apidoc.element.knox-mpu.multipartupload">
+        function <span class="apidocSignatureSpan">knox-mpu.</span>multipartupload
+        <span class="apidocSignatureSpan">(opts, callback)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">function MultiPartUpload(opts, callback) {
+    if (!opts.client || !opts.objectName) {
+        throw new Error(&#x27;MultiPart upload must be created from a client and provide an object name&#x27;);
+    }
+
+    if (!opts.stream &#x26;&#x26; !opts.file) {
+        throw new Error(&#x27;MultiPart upload must be passed either a stream or file parameter&#x27;);
+    }
+
+    if (opts.stream &#x26;&#x26; opts.file) {
+        throw new Error(&#x27;You cannot provide both a stream and a file to upload&#x27;);
+    }
+
+    if (opts.noDisk &#x26;&#x26; opts.partSize &#x26;&#x26; opts.partSize &#x3e; 10485760) {
+        throw new Error(&#x27;Keep in-memory part sizes 10MB or less&#x27;);
+    }
+
+    callback = callback || function(err, results) {};
+
+    this.objectName = opts.objectName;
+    this.fileName = opts.file;
+    this.headers = opts.headers || {};
+    this.client = opts.client;
+    this.partSize = opts.partSize || 5242880; // 5MB default
+    this.maxRetries = opts.maxRetries || 0;   // default to no retry
+    this.uploadId = null;
+    this.uploads = new Batch();
+    this.noDisk = opts.noDisk;
+    this.maxUploadSize = opts.maxUploadSize || 1/0; // infinity default
+    this.currentUploadSize = 0;
+    this.aborted = false;
+    this.totalUploadSize = 0;
+
+    this.uploads.concurrency(opts.batchSize ||4); // 4 simultaneous uploads by default
+
+    // initialise the tmp directory based on opts (fallback to os.tmpDir())
+    this.tmpDir = !this.noDisk &#x26;&#x26; (opts.tmpDir || os.tmpDir());
+
+    var mpu = this,
+        written = 0;
+
+    mpu.on(&#x27;partProgress&#x27;, function(data) {
+        written += data.written;
+        mpu.emit(&#x27;progress&#x27;, {
+            written: written,
+            total: mpu.totalUploadSize,
+            percent: written / mpu.totalUploadSize * 100 | 0
+        });
+    });
+
+    // Recalculate progress as previously written data needs to be rewritten
+    mpu.on(&#x27;failed&#x27;, function(part, partWritten) {
+        written = written - partWritten;
+    });
+
+    if (opts.stream) {
+        this._putStream(opts.stream, callback);
+    } else {
+        this._putFile(opts.file, callback);
+    }
+
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.knox-mpu.super_" id="apidoc.element.knox-mpu.super_">
+        function <span class="apidocSignatureSpan">knox-mpu.</span>super_
+        <span class="apidocSignatureSpan">()</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">function EventEmitter() {
+  EventEmitter.init.call(this);
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.knox-mpu.toString" id="apidoc.element.knox-mpu.toString">
+        function <span class="apidocSignatureSpan">knox-mpu.</span>toString
+        <span class="apidocSignatureSpan">()</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">toString = function () {
+    return text;
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+
+</div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.knox-mpu.parse" id="apidoc.module.knox-mpu.parse">module knox-mpu.parse</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.knox-mpu.parse.xmlResponse" id="apidoc.element.knox-mpu.parse.xmlResponse">
+        function <span class="apidocSignatureSpan">knox-mpu.parse.</span>xmlResponse
+        <span class="apidocSignatureSpan">(req, callback)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">function xmlResponse(req, callback) {
+
+    if (!req) return callback(&#x27;Invalid request&#x27;);
+
+    // Handle the response
+    req.on(&#x27;response&#x27;, function(res) {
+        var body = &#x27;&#x27;;
+
+        res.on(&#x27;data&#x27;, function(chunk){
+            body += chunk;
+        });
+
+        res.on(&#x27;end&#x27;, function(){
+            var parser = new xml2js.Parser({explicitArray: false, explicitRoot: false});
+            parser.parseString(body, callback);
+        });
+
+        res.on(&#x27;error&#x27;, callback);
+    });
+
+    req.on(&#x27;error&#x27;, callback);
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.knox-mpu.toString" id="apidoc.module.knox-mpu.toString">module knox-mpu.toString</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.knox-mpu.toString.toString" id="apidoc.element.knox-mpu.toString.toString">
+        function <span class="apidocSignatureSpan">knox-mpu.</span>toString
+        <span class="apidocSignatureSpan">()</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">function toString() { [native code] }</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocFooterDiv">
+    [ this document was created with
+    <a href="https://github.com/kaizhu256/node-utility2" target="_blank">utility2</a>
+    ]
+</div>
+</div>
