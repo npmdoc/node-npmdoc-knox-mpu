@@ -1,4 +1,7 @@
-# api documentation for  [knox-mpu (v0.1.6)](https://github.com/nathanoehlman/knox-mpu#readme)  [![npm package](https://img.shields.io/npm/v/npmdoc-knox-mpu.svg?style=flat-square)](https://www.npmjs.org/package/npmdoc-knox-mpu) [![travis-ci.org build-status](https://api.travis-ci.org/npmdoc/node-npmdoc-knox-mpu.svg)](https://travis-ci.org/npmdoc/node-npmdoc-knox-mpu)
+# npmdoc-knox-mpu
+
+#### api documentation for  [knox-mpu (v0.1.6)](https://github.com/nathanoehlman/knox-mpu#readme)  [![npm package](https://img.shields.io/npm/v/npmdoc-knox-mpu.svg?style=flat-square)](https://www.npmjs.org/package/npmdoc-knox-mpu) [![travis-ci.org build-status](https://api.travis-ci.org/npmdoc/node-npmdoc-knox-mpu.svg)](https://travis-ci.org/npmdoc/node-npmdoc-knox-mpu)
+
 #### Provide multi part upload functionality to Amazon S3 using the knox library
 
 [![NPM](https://nodei.co/npm/knox-mpu.png?downloads=true&downloadRank=true&stars=true)](https://www.npmjs.com/package/knox-mpu)
